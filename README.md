@@ -13,7 +13,7 @@ A beautifully styled, responsive, and functional dictionary web app built using 
 
 ## 🚀 Live Demo
 
-👉 [Visit the Live Site](#)  
+👉 [Visit the Live Site](https://chandradipta.github.io/My-Personal-Dictionary/)  
 
 ## 🛠 Tech Stack
 
