@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Personal Dictionary</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f4f8;
+      color: #222;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 6vh auto;
+      padding: 30px 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-family: 'Pirata One', cursive;
+      font-size: 2.7em;
+      color: #002080;
+      letter-spacing: 1px;
+      transition: color 0.3s;
+    }
+
+    .dark-mode h1 {
+      color: #809fff;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    input[type="text"] {
+      padding: 12px 16px;
+      font-size: 16px;
+      width: 65%;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      transition: 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #4a90e2;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+    }
+
+    button {
+      padding: 12px 16px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .search-btn {
+      background: #ff6699;
+      color: white;
+    }
+
+    .search-btn:hover {
+      background: #e05588;
+    }
+
+    .toggle-mode {
+      background: #eee;
+      font-size: 18px;
+    }
+
+    .toggle-mode:hover {
+      background: #ddd;
+    }
+
+    .result-box {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #ddd;
+    }
+
+    .result-box h2 {
+      margin-bottom: 5px;
+    }
+
+    .action-btn {
+      margin-top: 12px;
+      margin-right: 10px;
+      background: #4a90e2;
+      color: white;
+      padding: 10px 14px;
+    }
+
+    .action-btn:hover {
+      background: #357ad4;
+    }
+
+    .audio-btn {
+      border: none;
+      background: #4a90e2;
+      color: white;
+      font-size: 16px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+
+    .audio-btn:hover {
+      background: #357ad4;
+    }
+
+    .dark-mode {
+      background: #121212;
+      color: #e0e0e0;
+    }
+
+    .dark-mode .container {
+      background: #1e1e1e;
+      box-shadow: 0 8px 20px rgba(255, 255, 255, 0.05);
+    }
+
+    .dark-mode input,
+    .dark-mode button {
+      background: #2a2a2a;
+      color: #f0f0f0;
+      border: 1px solid #444;
+    }
+
+    .dark-mode .search-btn {
+      background: #bb86fc;
+      color: #121212;
+    }
+
+    .dark-mode .search-btn:hover {
+      background: #a573ec;
+    }
+
+    .dark-mode .toggle-mode {
+      background: #333;
+    }
+
+    .dark-mode .toggle-mode:hover {
+      background: #444;
+    }
+
+    @media (max-width: 600px) {
+      input[type="text"] {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>My Personal Dictionary</h1>
+    <div class="search-box">
+      <input type="text" id="wordInput" placeholder="Enter a word..." />
+      <button onclick="searchWord()" class="search-btn">Search</button>
+      <button onclick="toggleDarkMode()" class="toggle-mode" id="modeToggle">🌙</button>
+    </div>
+    <div id="result" class="result-box"></div>
+  </div>
+
+  <script>
+    let currentWordData = {};
+
+    async function searchWord() {
+      const word = document.getElementById("wordInput").value.trim();
+      const resultBox = document.getElementById("result");
+
+      if (!word) {
+        resultBox.innerHTML = "<p>Please enter a word.</p>";
+        return;
+      }
+
+      resultBox.innerHTML = "<p>Loading...</p>";
+
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+        const data = await res.json();
+
+        if (data.title === "No Definitions Found") {
+          resultBox.innerHTML = `<p>No definition found for <b>${word}</b>.</p>`;
+          return;
+        }
+
+        const def = data[0];
+        const meaning = def.meanings[0];
+        const phonetics = def.phonetics.find(p => p.text)?.text || "";
+        const audio = def.phonetics.find(p => p.audio)?.audio || "";
+        const definition = meaning.definitions[0].definition;
+        const example = meaning.definitions[0].example || "No example available.";
+
+        currentWordData = { word: def.word, phonetics, definition, example };
+
+        resultBox.innerHTML = `
+          <h2>${def.word}</h2>
+          <p><i>${phonetics}</i> 
+            ${audio ? `<button class="audio-btn" onclick="new Audio('${audio}').play()">🔊</button>` : ''}
+          </p>
+          <p><strong>Definition:</strong> ${definition}</p>
+          <p><strong>Example:</strong> ${example}</p>
+          <button class="action-btn" onclick="saveToFavorites()">⭐ Save to Favorites</button>
+          <button class="action-btn" onclick="downloadPDF()">📄 Download as PDF</button>
+        `;
+      } catch (err) {
+        resultBox.innerHTML = `<p>Error fetching data. Please try again later.</p>`;
+        console.error(err);
+      }
+    }
+
+    function toggleDarkMode() {
+      const body = document.body;
+      const toggleButton = document.getElementById("modeToggle");
+      body.classList.toggle("dark-mode");
+      toggleButton.textContent = body.classList.contains("dark-mode") ? "☀️" : "🌙";
+    }
+
+    function saveToFavorites() {
+      const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+      favorites.push(currentWordData);
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+      alert(`"${currentWordData.word}" saved to favorites!`);
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.text(currentWordData.word, 20, 30);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.text(`Phonetics: ${currentWordData.phonetics || 'N/A'}`, 20, 45);
+      doc.text(`Definition: ${currentWordData.definition}`, 20, 60, { maxWidth: 170 });
+      doc.text(`Example: ${currentWordData.example}`, 20, 80, { maxWidth: 170 });
+
+      doc.save(`${currentWordData.word}_definition.pdf`);
+    }
+
+    document.getElementById("wordInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") searchWord();
+    });
+  </script>
+</body>
+</html>
